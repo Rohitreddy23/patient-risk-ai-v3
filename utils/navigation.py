@@ -2,7 +2,14 @@ import streamlit as st
 
 def show_menu():
 
-    if st.session_state.role == "admin":
+    if not st.session_state.get("logged_in", False):
+        st.warning("Please login first")
+        st.switch_page("app.py")
+        st.stop()
+
+    role = st.session_state.get("role")
+
+    if role == "admin":
 
         st.sidebar.title("Admin Menu")
 
@@ -27,7 +34,7 @@ def show_menu():
         if st.sidebar.button("Logout"):
             st.switch_page("pages/logout.py")
 
-    else:
+    elif role == "patient":
 
         st.sidebar.title("Patient Menu")
 
@@ -48,3 +55,6 @@ def show_menu():
 
         if st.sidebar.button("Logout"):
             st.switch_page("pages/logout.py")
+
+    else:
+        st.switch_page("app.py")
