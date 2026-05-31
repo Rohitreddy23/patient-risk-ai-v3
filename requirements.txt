@@ -1,0 +1,14 @@
+streamlit
+pandas
+numpy
+scikit-learn
+matplotlib
+plotly
+requests
+python-dotenv
+reportlab
+shap
+sentence-transformers
+faiss-cpu
+torch
+torchvision
