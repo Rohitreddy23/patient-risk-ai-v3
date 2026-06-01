@@ -1,13 +1,18 @@
 import requests
 import os
+import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
 
-API_KEY = os.getenv("OPENROUTER_API_KEY")
-
+API_KEY = st.secrets.get(
+    "OPENROUTER_API_KEY",
+    os.getenv("OPENROUTER_API_KEY")
+)
 
 def generate_report(patient_data, risk_level):
+    if not API_KEY:
+        return "OpenRouter API key not configured."
 
     prompt = f"""
     You are a healthcare AI assistant.
