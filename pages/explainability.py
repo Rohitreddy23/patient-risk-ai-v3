@@ -31,6 +31,9 @@ if st.session_state.role != "admin":
 with open("model.pkl", "rb") as f:
     model = pickle.load(f)
 
+with open("encoder.pkl", "rb") as f:
+    encoder = pickle.load(f)
+
 # ==========================
 # LOAD DATA
 # ==========================
@@ -76,7 +79,7 @@ st.dataframe(
     use_container_width=True
 )
 
-fig1, ax1 = plt.subplots(figsize=(8,4))
+fig1, ax1 = plt.subplots(figsize=(8, 4))
 
 ax1.barh(
     imp_df["Feature"],
@@ -90,7 +93,7 @@ ax1.set_title(
 st.pyplot(fig1)
 
 # ==========================
-# SHAP
+# SHAP SUMMARY
 # ==========================
 
 st.subheader("SHAP Summary Plot")
@@ -108,7 +111,7 @@ try:
         sample_data
     )
 
-    plt.figure(figsize=(10,6))
+    plt.figure(figsize=(10, 6))
 
     if isinstance(shap_values, list):
 
@@ -120,11 +123,21 @@ try:
 
     else:
 
-        shap.summary_plot(
-            shap_values,
-            sample_data,
-            show=False
-        )
+        if len(shap_values.shape) == 3:
+
+            shap.summary_plot(
+                shap_values[:, :, 0],
+                sample_data,
+                show=False
+            )
+
+        else:
+
+            shap.summary_plot(
+                shap_values,
+                sample_data,
+                show=False
+            )
 
     fig2 = plt.gcf()
 
@@ -137,7 +150,7 @@ except Exception as e:
     )
 
 # ==========================
-# SINGLE PATIENT
+# SINGLE PATIENT ANALYSIS
 # ==========================
 
 st.subheader(
@@ -147,12 +160,12 @@ st.subheader(
 patient_index = st.slider(
     "Select Patient Index",
     0,
-    len(X)-1,
+    len(X) - 1,
     0
 )
 
 patient_data = X.iloc[
-    patient_index:patient_index+1
+    patient_index:patient_index + 1
 ]
 
 st.write(
@@ -168,12 +181,16 @@ prediction = model.predict(
     patient_data
 )[0]
 
+prediction_label = encoder.inverse_transform(
+    [prediction]
+)[0]
+
 st.success(
-    f"Model Prediction Class: {prediction}"
+    f"Prediction: {prediction_label}"
 )
 
 # ==========================
-# SHAP VALUES TABLE
+# PATIENT SHAP VALUES
 # ==========================
 
 try:
@@ -188,7 +205,17 @@ try:
 
     else:
 
-        values = single_shap[0]
+        if len(single_shap.shape) == 3:
+
+            values = single_shap[0, :, 0]
+
+        elif len(single_shap.shape) == 2:
+
+            values = single_shap[0]
+
+        else:
+
+            values = single_shap
 
     shap_df = pd.DataFrame({
         "Feature": features,
@@ -205,7 +232,7 @@ try:
     )
 
     fig3, ax3 = plt.subplots(
-        figsize=(8,4)
+        figsize=(8, 4)
     )
 
     ax3.barh(
@@ -235,16 +262,13 @@ st.subheader(
 
 st.info(
     """
-    SHAP explains how each feature influences
-    the model prediction.
+    SHAP explains how each feature influences the model prediction.
 
-    Positive values increase the likelihood
-    of a prediction.
+    Positive SHAP values increase the likelihood of the predicted class.
 
-    Negative values decrease the likelihood
-    of a prediction.
+    Negative SHAP values decrease the likelihood of the predicted class.
 
-    This helps make machine learning decisions
-    more transparent and explainable.
+    This helps make machine learning decisions transparent, interpretable,
+    and trustworthy in healthcare applications.
     """
 )

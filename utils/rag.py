@@ -1,44 +1,64 @@
+import streamlit as st
 import pandas as pd
 import numpy as np
 import faiss
 
 from sentence_transformers import SentenceTransformer
 
-df = pd.read_csv("realtime_patient_data.csv")
 
-documents = (
-    df["Medical_Condition"].astype(str)
-    + " | Medication: "
-    + df["Medication"].astype(str)
-    + " | Test Result: "
-    + df["Test_Results"].astype(str)
-)
+@st.cache_resource
+def load_rag():
 
-embedding_model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
-)
+    df = pd.read_csv(
+        "realtime_patient_data.csv"
+    ).head(1000)
 
-embeddings = embedding_model.encode(
-    documents.tolist()
-)
+    documents = (
+        df["Medical_Condition"].astype(str)
+        + " | Medication: "
+        + df["Medication"].astype(str)
+        + " | Test Result: "
+        + df["Test_Results"].astype(str)
+    )
 
-index = faiss.IndexFlatL2(
-    embeddings.shape[1]
-)
+    embedding_model = SentenceTransformer(
+        "all-MiniLM-L6-v2"
+    )
 
-index.add(
-    np.array(embeddings).astype("float32")
-)
+    embeddings = embedding_model.encode(
+        documents.tolist(),
+        show_progress_bar=False
+    )
+
+    index = faiss.IndexFlatL2(
+        embeddings.shape[1]
+    )
+
+    index.add(
+        np.array(
+            embeddings
+        ).astype("float32")
+    )
+
+    return (
+        embedding_model,
+        index,
+        documents
+    )
 
 
 def retrieve_context(query):
 
-    query_embedding = embedding_model.encode(
+    model, index, documents = load_rag()
+
+    query_embedding = model.encode(
         [query]
     )
 
     distances, indices = index.search(
-        np.array(query_embedding).astype("float32"),
+        np.array(
+            query_embedding
+        ).astype("float32"),
         3
     )
 
