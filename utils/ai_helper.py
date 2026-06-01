@@ -51,4 +51,7 @@ def generate_report(patient_data, risk_level):
 
     data = response.json()
 
-    return data["choices"][0]["message"]["content"]
+    if "choices" in data:
+        return data["choices"][0]["message"]["content"]
+    else:
+        return f"AI Report Generation Failed: {data}"
